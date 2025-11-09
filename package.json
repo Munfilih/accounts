@@ -1,0 +1,19 @@
+{
+  "name": "accounts-keeper",
+  "version": "1.0.0",
+  "description": "Advanced accounts keeping web application",
+  "main": "server.js",
+  "scripts": {
+    "start": "npx http-server . -p 3000",
+    "dev": "npx http-server . -p 3000 -o"
+  },
+  "dependencies": {
+    "firebase": "^10.7.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "keywords": ["accounts", "finance", "web-app", "bootstrap"],
+  "author": "Your Name",
+  "license": "MIT"
+}

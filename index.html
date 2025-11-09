@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=1.0, user-scalable=yes">
+    <title>Accounts Keeper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #0066B2;
+            --color-success: #28A745;
+            --color-warning: #FD7E14;
+            --bg-sidebar: #F8F9FA;
+            --bg-hover: #F1F3F5;
+            --bg-active: #FFFFFF;
+            --border-color: #E9ECEF;
+            --text-primary: #212529;
+            --text-secondary: #6C757D;
+        }
+        
+        body { background: white; font-family: Inter, -apple-system, sans-serif; font-size: 12px; color: var(--text-primary); }
+        .sidebar { background: var(--bg-sidebar); min-height: 100vh; border-right: 1px solid var(--border-color); padding: 24px 16px; }
+        .sidebar .nav-link { color: var(--text-primary); padding: 10px 12px; font-size: 14px; font-weight: 500; border-radius: 6px; height: 40px; display: flex; align-items: center; }
+        .sidebar .nav-link:hover { background: var(--bg-hover); }
+        .sidebar .nav-link.active { background: var(--bg-active); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .top-bar { background: white; padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
+        .brand { font-size: 16px; font-weight: 600; color: var(--text-primary); height: 56px; padding: 16px 0; }
+        .stat-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 32px; font-weight: 600; margin: 8px 0; }
+        .stat-label { color: var(--text-secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .income { color: var(--color-success); }
+        .expense { color: #DC3545; }
+        .balance { color: var(--color-primary); }
+        .quick-actions { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .action-btn { width: 100%; margin-bottom: 12px; padding: 12px; font-size: 14px; border-radius: 6px; }
+        .recent-list { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .transaction-item { padding: 16px 0; border-bottom: 1px solid #F1F3F5; font-size: 14px; transition: background 0.15s; }
+        .transaction-item:hover { background: var(--bg-hover); border-radius: 6px; padding: 16px 12px; margin: 0 -12px; }
+        .transaction-item:last-child { border-bottom: none; }
+        .menu-toggle { display: none; }
+        .section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+        
+        @media (max-width: 992px) {
+            .sidebar { position: fixed; top: 0; left: -320px; width: 320px; transition: 0.3s; z-index: 1000; padding: 32px 24px; }
+            .sidebar .nav-link { padding: 16px 20px; font-size: 16px; height: 56px; }
+            .sidebar .brand { font-size: 20px; height: 72px; padding: 24px 0; }
+            .sidebar.show { left: 0; }
+            .menu-toggle { display: block; }
+            .top-bar { padding: 16px 20px; }
+        }
+        
+        @media (max-width: 576px) {
+            .top-bar { padding: 12px 16px; }
+            .top-bar h1 { font-size: 20px; }
+            .stat-card { padding: 16px; }
+            .stat-value { font-size: 24px; }
+            .action-btn { padding: 8px; font-size: 12px; }
+            .quick-actions { padding: 16px; }
+            .recent-list { padding: 16px; }
+        }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .overlay.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="p-3">
+                    <div class="brand mb-4">
+                        <i class="fas fa-wallet me-2"></i>AccountsKeeper
+                    </div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
+                        <a class="nav-link" href="transactions.html"><i class="fas fa-exchange-alt me-2"></i>Transactions</a>
+                        <a class="nav-link" href="accounts.html"><i class="fas fa-university me-2"></i>Accounts</a>
+
+
+                        <a class="nav-link" href="settings.html"><i class="fas fa-cog me-2"></i>Settings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- Top Bar -->
+                <div class="top-bar d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3 menu-toggle" id="menuToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h1 style="font-size: 20px; font-weight: 700; margin: 0;">Dashboard</h1>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">Welcome back, <span id="userName"></span></p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="d-none d-sm-inline ms-1">Logout</span>
+                    </button>
+                </div>
+
+                <div style="padding: 16px 24px;">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-label">Receivable</div>
+                                <div class="stat-value income" id="totalReceivable">₹0.00</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-label">Payable</div>
+                                <div class="stat-value expense" id="totalPayable">₹0.00</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-label">Savings</div>
+                                <div class="stat-value" style="color: #17a2b8;" id="totalSavings">₹0.00</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <div class="stat-label">Net Balance</div>
+                                <div class="stat-value balance" id="netBalance">₹0.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Quick Actions -->
+                        <div class="col-md-2">
+                            <div class="quick-actions">
+                                <div class="section-title">Actions</div>
+                                <button class="btn btn-success action-btn" onclick="showReceiptModal()">
+                                    <i class="fas fa-plus"></i> Receipt
+                                </button>
+                                <button class="btn btn-danger action-btn" onclick="showPaymentModal()">
+                                    <i class="fas fa-minus"></i> Payment
+                                </button>
+                                <a href="accounts.html" class="btn btn-outline-primary action-btn">
+                                    <i class="fas fa-cog"></i> Accounts
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="col-md-10">
+                            <div class="recent-list">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="section-title mb-0">Recent Transactions</div>
+                                    <a href="transactions.html" class="btn btn-sm btn-outline-primary">View All</a>
+                                </div>
+                                <div id="recentTransactions">
+                                    <div class="text-center text-muted py-4">
+                                        <i class="fas fa-receipt fa-2x mb-2"></i>
+                                        <p>No transactions yet</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Common Transaction Form -->
+    <div id="transactionFormContainer"></div>
+
+    <!-- Quick Type Modal -->
+    <div class="modal fade" id="quickTypeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Account Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="quickTypeForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="quickTypeName" class="form-label">Type Name</label>
+                            <input type="text" class="form-control" id="quickTypeName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quickTypeCategory" class="form-label">Category</label>
+                            <select class="form-select" id="quickTypeCategory" required>
+                                <option value="">Select Category</option>
+                                <option value="asset">Asset</option>
+                                <option value="liability">Liability</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Type</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="transaction-form.js"></script>
+    <script>
+        // Load common transaction form synchronously
+        async function loadTransactionForm() {
+            try {
+                const response = await fetch('transaction-form.html');
+                const html = await response.text();
+                document.getElementById('transactionFormContainer').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading transaction form:', error);
+            }
+        }
+        
+        // Load form immediately
+        loadTransactionForm();
+    </script>
+    <script>
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOdcYVkewFy_jqfJTIY4qeqcn-mWa0Ww8",
+            authDomain: "polosysaccounts-a494e.firebaseapp.com",
+            projectId: "polosysaccounts-a494e",
+            storageBucket: "polosysaccounts-a494e.firebasestorage.app",
+            messagingSenderId: "775822338953",
+            appId: "1:775822338953:web:1e40b736cbcf760d200f58"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null;
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('userName').textContent = user.displayName || user.email;
+                
+                // Wait for transaction form to load, then initialize
+                const waitForForm = setInterval(() => {
+                    if (document.getElementById('transactionModal')) {
+                        clearInterval(waitForForm);
+                        
+                        // Initialize common transaction form
+                        TransactionFormInstance.init(user, async () => {
+                            await loadData();
+                        });
+                    }
+                }, 100);
+                
+                await loadData();
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => auth.signOut());
+
+        // Mobile menu toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.getElementById('overlay');
+        
+        if (menuToggle && sidebar && overlay) {
+            menuToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+            });
+            
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+            });
+        }
+
+        async function loadData() {
+            try {
+                // Load accounts and transactions data
+                const [accountsSnapshot, transactionsSnapshot] = await Promise.all([
+                    db.collection('accounts').where('userId', '==', currentUser.uid).get(),
+                    db.collection('transactions').where('userId', '==', currentUser.uid).get()
+                ]);
+                
+                const accounts = [];
+                accountsSnapshot.forEach(doc => accounts.push({ id: doc.id, ...doc.data() }));
+                
+                const allTransactions = [];
+                transactionsSnapshot.forEach(doc => allTransactions.push({ id: doc.id, ...doc.data() }));
+                
+
+                
+                // Calculate account balances from transactions
+                let receivable = 0, payable = 0, savings = 0;
+                
+                accounts.forEach(account => {
+                    const accountTransactions = allTransactions.filter(t => t.accountId === account.id);
+                    let balance = 0;
+                    
+                    // Calculate account balance: pay = positive (receivable), receive = negative (payable)
+                    accountTransactions.forEach(transaction => {
+                        const amount = parseFloat(transaction.amount) || 0;
+                        if (transaction.type === 'pay') {
+                            balance += amount; // Money you gave = receivable
+                        } else if (transaction.type === 'receive') {
+                            balance -= amount; // Money you received = payable
+                        }
+                    });
+                    
+                    if (balance > 0) {
+                        receivable += balance;
+                    } else if (balance < 0) {
+                        payable += Math.abs(balance);
+                    }
+                });
+                
+                const netBalance = savings + receivable - payable;
+                
+                // Ensure no negative values
+                receivable = Math.max(0, receivable);
+                payable = Math.max(0, payable);
+                savings = Math.max(0, savings);
+                
+
+                
+                document.getElementById('totalReceivable').textContent = `₹${receivable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById('totalPayable').textContent = `₹${payable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById('totalSavings').textContent = `₹${0.00.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                document.getElementById('netBalance').textContent = `₹${netBalance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                
+                // Recent transactions - sort by date descending (most recent first)
+                const sortedTransactions = allTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+                const recent = sortedTransactions.slice(0, 5);
+                const recentHtml = recent.map(t => {
+                    const account = accounts.find(a => a.id === t.accountId);
+                    const typeText = t.type === 'receive' ? 'Receipt' : 'Payment';
+                    const typeClass = t.type === 'receive' ? 'income' : 'expense';
+                    const sign = t.type === 'receive' ? '+' : '-';
+                    
+                    return `
+                        <div class="transaction-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">${t.description || typeText}</div>
+                                <small class="text-muted">${account?.name || 'Unknown Account'} • ${t.date}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold ${typeClass}">
+                                    ${sign}₹${parseFloat(t.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                document.getElementById('recentTransactions').innerHTML = recent.length ? recentHtml : 
+                    '<div class="text-center text-muted py-4"><i class="fas fa-receipt fa-2x mb-2"></i><p>No transactions yet</p></div>';
+                    
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        async function showReceiptModal() {
+            await TransactionFormInstance.showReceiptModal();
+        }
+
+        async function showPaymentModal() {
+            await TransactionFormInstance.showPaymentModal();
+        }
+    </script>
+</body>
+</html>

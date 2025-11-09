@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=1.0, user-scalable=yes">
+    <title>Transactions - Accounts Keeper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --color-primary: #0066B2;
+            --color-success: #28A745;
+            --color-warning: #FD7E14;
+            --bg-sidebar: #F8F9FA;
+            --bg-hover: #F1F3F5;
+            --bg-active: #FFFFFF;
+            --border-color: #E9ECEF;
+            --text-primary: #212529;
+            --text-secondary: #6C757D;
+        }
+        
+        body { background: white; font-family: Inter, -apple-system, sans-serif; font-size: 12px; color: var(--text-primary); }
+        .sidebar { background: var(--bg-sidebar); min-height: 100vh; border-right: 1px solid var(--border-color); padding: 24px 16px; }
+        .sidebar .nav-link { color: var(--text-primary); padding: 10px 12px; font-size: 14px; font-weight: 500; border-radius: 6px; height: 40px; display: flex; align-items: center; }
+        .sidebar .nav-link:hover { background: var(--bg-hover); }
+        .sidebar .nav-link.active { background: var(--bg-active); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .top-bar { background: white; padding: 16px 24px; border-bottom: 1px solid var(--border-color); }
+        .brand { font-size: 16px; font-weight: 600; color: var(--text-primary); height: 56px; padding: 16px 0; }
+        .table-container { background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .table thead th { background: var(--bg-sidebar); height: 44px; padding: 12px 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); border-bottom: 1px solid var(--border-color); }
+        .table tbody tr { height: 56px; border-bottom: 1px solid #F1F3F5; transition: background 0.15s; cursor: pointer; }
+        .table tbody tr:hover { background: var(--bg-hover); }
+        .table tbody td { padding: 16px; vertical-align: middle; }
+        .search-filters { background: white; border: 1px solid var(--border-color); border-radius: 8px; padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .menu-toggle { display: none; }
+        .card { border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card-body { padding: 24px; }
+        .card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 8px; }
+        .card h4 { font-size: 24px; font-weight: 600; margin: 0; }
+        
+        @media (max-width: 992px) {
+            .sidebar { position: fixed; top: 0; left: -320px; width: 320px; transition: 0.3s; z-index: 1000; padding: 32px 24px; }
+            .sidebar .nav-link { padding: 16px 20px; font-size: 16px; height: 56px; }
+            .sidebar .brand { font-size: 20px; height: 72px; padding: 24px 0; }
+            .sidebar.show { left: 0; }
+            .menu-toggle { display: block; }
+            .top-bar { padding: 16px 20px; }
+            .search-filters { padding: 16px; }
+            .table-container { overflow-x: auto; }
+            .table { min-width: 700px; }
+        }
+        
+        @media (max-width: 576px) {
+            .top-bar { padding: 12px 16px; }
+            .top-bar h1 { font-size: 20px; }
+            .card-body { padding: 16px; }
+            .card h4 { font-size: 20px; }
+            .table tbody tr { height: 48px; }
+            .table tbody td { padding: 12px 8px; font-size: 12px; }
+            .table thead th { padding: 8px; font-size: 11px; }
+            .d-none-mobile { display: none !important; }
+            .search-filters .row > div:nth-child(n+3) { display: none; }
+            .search-filters .row:nth-child(2) { display: none; }
+        }
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; }
+        .overlay.show { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <div class="p-3">
+                    <div class="brand mb-4">
+                        <i class="fas fa-wallet me-2"></i>AccountsKeeper
+                    </div>
+                    <nav class="nav flex-column">
+                        <a class="nav-link" href="index.html"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a>
+                        <a class="nav-link active" href="transactions.html"><i class="fas fa-exchange-alt me-2"></i>Transactions</a>
+                        <a class="nav-link" href="accounts.html"><i class="fas fa-university me-2"></i>Accounts</a>
+
+                        <a class="nav-link" href="settings.html"><i class="fas fa-cog me-2"></i>Settings</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 main-content">
+                <!-- Top Bar -->
+                <div class="top-bar d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <button class="btn btn-outline-secondary me-3 menu-toggle" id="menuToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div>
+                            <h1 style="font-size: 20px; font-weight: 700; margin: 0;">Transactions</h1>
+                            <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">View and manage all transactions</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" id="logoutBtn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span class="d-none d-sm-inline ms-1">Logout</span>
+                    </button>
+                </div>
+
+                <div style="padding: 16px 24px;">
+                    <div class="search-filters">
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label class="form-label">Search</label>
+                                <input type="text" class="form-control" id="searchInput" placeholder="Search transactions...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Type</label>
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="receive">Receipt</option>
+                                    <option value="pay">Payment</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Account</label>
+                                <select class="form-select" id="accountFilter">
+                                    <option value="">All Accounts</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="fromDate">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="toDate">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label class="form-label">Sort By</label>
+                                <select class="form-select" id="sortBy">
+                                    <option value="date">Date</option>
+                                    <option value="amount">Amount</option>
+                                    <option value="account">Account</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Order</label>
+                                <select class="form-select" id="sortOrder">
+                                    <option value="desc">Descending</option>
+                                    <option value="asc">Ascending</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">EMI Only</label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="emiFilter">
+                                    <label class="form-check-label" for="emiFilter">Show EMI only</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end">
+                                <button class="btn btn-primary me-2" onclick="applyFilters()">
+                                    <i class="fas fa-search me-1"></i>Search
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                                    <i class="fas fa-times me-1"></i>Clear
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-2">
+                        <div class="col-md-3 col-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-muted">Total Transactions</h6>
+                                    <h4 id="totalCount">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 d-none-mobile">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">Total Receipts</h6>
+                                    <h4 id="totalReceipts" class="text-success">₹0.00</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 d-none-mobile">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-danger">Total Payments</h6>
+                                    <h4 id="totalPayments" class="text-danger">₹0.00</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title text-primary">Net Amount</h6>
+                                    <h4 id="netAmount" class="text-primary">₹0.00</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions List -->
+                    <div class="transactions-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">All Transactions</h6>
+                            <div>
+                                <button class="btn btn-success btn-sm me-2" onclick="showReceiptModal()">
+                                    <i class="fas fa-plus me-1"></i>Receipt
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="showPaymentModal()">
+                                    <i class="fas fa-plus me-1"></i>Payment
+                                </button>
+                            </div>
+                        </div>
+                        <div id="transactionsList">
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-exchange-alt fa-2x mb-2"></i>
+                                <p>Loading transactions...</p>
+                            </div>
+                        </div>
+                        <div id="pagination" class="d-flex justify-content-center mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Details Modal -->
+    <div class="modal fade" id="transactionDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionDetailsTitle">Transaction Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Amount:</strong>
+                            <div id="detailTransactionAmount" class="h4"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Date:</strong>
+                            <div id="detailTransactionDate" class="h6"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Type:</strong>
+                            <div id="detailTransactionType"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Account:</strong>
+                            <div id="detailTransactionAccount" class="fw-bold"></div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong>Description:</strong>
+                            <div id="detailTransactionDescription" class="mt-1"></div>
+                        </div>
+                    </div>
+                    <div id="detailEMISection" style="display: none;">
+                        <h6 class="text-primary">EMI Details</h6>
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <strong>EMI Numbers:</strong>
+                                <div id="detailEMINumbers"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>EMI Amount:</strong>
+                                <div id="detailEMIAmount"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <strong>EMI Type:</strong>
+                                <div id="detailEMIType"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="detailAttachmentSection" style="display: none;">
+                        <strong>Attachment:</strong>
+                        <div class="mt-2">
+                            <button class="btn btn-outline-primary" id="viewAttachmentBtn">
+                                <i class="fas fa-eye me-2"></i>View Attachment
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="editTransactionBtn">
+                        <i class="fas fa-edit me-1"></i>Edit
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" id="deleteTransactionBtn">
+                        <i class="fas fa-trash me-1"></i>Delete
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include Common Transaction Form -->
+    <div id="transactionFormContainer"></div>
+
+    <!-- Overlay for mobile -->
+    <div class="overlay" id="overlay"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="transaction-form.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOdcYVkewFy_jqfJTIY4qeqcn-mWa0Ww8",
+            authDomain: "polosysaccounts-a494e.firebaseapp.com",
+            projectId: "polosysaccounts-a494e",
+            storageBucket: "polosysaccounts-a494e.firebasestorage.app",
+            messagingSenderId: "775822338953",
+            appId: "1:775822338953:web:1e40b736cbcf760d200f58"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        // Load common transaction form synchronously
+        async function loadTransactionForm() {
+            try {
+                const response = await fetch('transaction-form.html');
+                const html = await response.text();
+                document.getElementById('transactionFormContainer').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading transaction form:', error);
+            }
+        }
+        
+        // Load form immediately
+        loadTransactionForm();
+    </script>
+    <script src="transactions.js"></script>
+</body>
+</html>
